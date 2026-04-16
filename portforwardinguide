@@ -1,0 +1,61 @@
+/ filter rules
+1. accept established
+chain: forward;
+connection state: establish, related;
+action: accept;
+
+2. accept nat'd ext
+chain: forward;
+in. interface: ext-bridge;
+connection nat state: dstnat;
+action: accept;
+
+3. block access
+chain: forward;
+dst. address: 192.168.27.0/24; (int network)
+protocol: tcp;
+dst port: 80;
+action: drop;
+
+/ NAT rules
+1. forward ext-bridge:9090 to web server
+chain: dstnat;
+protocol: tcp;
+dst port: 9090;
+in. interface: ext-bridge;
+action: dst-nat;
+to addresses: 192.168.27.5 (web server ip);
+to ports: 80;
+
+2. forwarding int > ext gateway:9090
+chain: dst-nat;
+src. address: 192.168.27.0/24; (int network lan)
+dst. address: 192.168.1.22; (dhcp client/ext gateway)
+protocol: tcp;
+dst. port: 9090;
+action: dst-nat;
+to addresses: 192.168.27.5;
+to port: 80;
+
+
+3. hairpin srcnat for int
+chain: srcnat;
+src. address: 192.168.27.0/24;
+dst. address: 192.168.27.0/24;
+out. interface: int-bridge;
+action: masquerade;
+
+4. general NAT for internet
+chain: srcnat;
+out. interface: ext-bridge;
+action: masquerade;
+
+/ Web Server configs for NGINX port forwarding
+
+//sudo nano /var/www/html/config.php (moodle config)
+$CFG->wwwroot = 'http://192.168.1.22:9090'; (dhcp client/ext gateway)
+$CFG->reverseproxy = true;
+
+//sudo nano /etc/nginx/sites-available/default
+port_in_redirect off;
+
