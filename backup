@@ -1,0 +1,32 @@
+/ backup for database
+cd /home
+mkdir backup
+cd backup
+nano backup.sh
+
+#!bash
+DB_NAME="moodle"
+DB_USER="moodleuser"
+DB_PASS="moodleuser"
+BACKUP_DIR="/home/backup"
+DATE=$(date +"%Y-%m-%d_%H-%M")
+
+BACKUP_FILE="$BACKUP_DIR/{$DB_NAME}_backup_$DATE.sql"
+
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_FILE
+#
+
+chmod +x backup.sh
+
+crontab -e
+mm hh * * * cd /home/ &&.backup.sh
+
+/ backup for nginx/apache
+cd /home
+mkdir backup
+sudo timedatectl set-timezone Asia/Makassar
+
+crontab -e 
+
+#crontab
+mm hh * * * /bin/tar -czf /home/backup/nginx.tar.gz /etc/nginx >> /home/backup/cron.log
